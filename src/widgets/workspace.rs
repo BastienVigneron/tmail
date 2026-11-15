@@ -7,7 +7,7 @@ use crate::{
 };
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 use rataflow::{
-    Background, BackgroundVariant, Edge, EdgeStyle, FitViewOptions, Flow, FlowEvent,
+    Background, BackgroundVariant, Edge, EdgeStyle, FitViewOptions, Flow, FlowAction, FlowEvent,
     HandlePosition, MiniMap, MiniMapPosition, Node, SelectionReveal, StepEdge, Sugiyama,
 };
 use ratatui::{
@@ -145,10 +145,11 @@ impl Workspace {
         }
         match key.code {
             KeyCode::Left | KeyCode::Up | KeyCode::Char('h') | KeyCode::Char('k') => {
-                self.flow.select_prev_node();
+                // Through `apply`, so the viewport follows the selection.
+                self.flow.apply(FlowAction::SelectPrev);
             }
             KeyCode::Right | KeyCode::Down | KeyCode::Char('j') | KeyCode::Char('l') => {
-                self.flow.select_next_node();
+                self.flow.apply(FlowAction::SelectNext);
             }
             KeyCode::Char('+' | '=') => self.flow.zoom_in(),
             KeyCode::Char('-' | '_') => self.flow.zoom_out(),
