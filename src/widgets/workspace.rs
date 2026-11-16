@@ -8,7 +8,8 @@ use crate::{
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 use rataflow::{
     Background, BackgroundVariant, Edge, EdgeStyle, FitViewOptions, Flow, FlowAction, FlowEvent,
-    HandlePosition, MiniMap, MiniMapPosition, Node, SelectionReveal, StepEdge, Sugiyama,
+    Handle, HandlePosition, MiniMap, MiniMapPosition, Node, Rect as FlowRect, SelectionReveal,
+    StepEdge, Sugiyama,
 };
 use ratatui::{
     Frame,
@@ -21,20 +22,65 @@ use ratatui::{
 /// the footer.
 const CARD_CHROME_HEIGHT: usize = 6;
 const HORIZONTAL_LAYOUT_WIDTH: u16 = 104;
+/// Space around the first and last cards, and between neighbouring cards.
+const SNAKE_MARGIN: f64 = 3.0;
+const SNAKE_GAP_X: f64 = 4.0;
+const SNAKE_GAP_Y: f64 = 3.0;
 /// Columns the viewport moves for each shift+arrow press.
 const PAN_STEP: f64 = 6.0;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum FlowLayout {
+enum FlowOrientation {
     Horizontal,
     Vertical,
+}
+
+/// How a conversation is arranged: the usual flow to the right, or a snake that
+/// wraps through rows and reverses direction on each row.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Arrangement {
+    Adaptive(FlowOrientation),
+    Snake(usize),
+}
+
+/// How a conversation is arranged and the size of its cards.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct CardLayout {
+    arrangement: Arrangement,
+    card_width: u16,
+    preview_lines: u16,
+}
+
+impl CardLayout {
+    fn from_settings(area_width: u16) -> Self {
+        let (snake, card_width, preview_lines) = settings::with(|ui| {
+            (
+                ui.workspace_layout == "snake",
+                ui.workspace_card_width,
+                ui.workspace_preview_lines,
+            )
+        });
+        Self {
+            arrangement: arrangement(snake, area_width, card_width),
+            card_width,
+            preview_lines,
+        }
+    }
+
+    fn width(self) -> f64 {
+        f64::from(self.card_width)
+    }
+
+    fn height(self) -> f64 {
+        card_height(self.preview_lines) as f64
+    }
 }
 
 pub struct Workspace {
     flow: Flow<MailCard, StepEdge>,
     mails: Vec<Mail>,
     selected_mail_id: String,
-    layout: FlowLayout,
+    layout: CardLayout,
 }
 
 /// The viewport delta for a pan key, if this key pans.
@@ -60,7 +106,8 @@ fn pan_offset(key: KeyEvent) -> Option<(f64, f64)> {
 
 impl Workspace {
     pub fn new(mails: &[Mail], selected_mail_id: &str) -> Self {
-        let layout = FlowLayout::Horizontal;
+        // The first draw knows the viewport width and reflows the cards.
+        let layout = CardLayout::from_settings(0);
         Self {
             flow: conversation_flow(mails, selected_mail_id, layout),
             mails: mails.to_vec(),
@@ -87,11 +134,7 @@ impl Workspace {
             .title_style(theme::title(focused))
             .title(title);
         let inner = block.inner(area);
-        let layout = if inner.width < HORIZONTAL_LAYOUT_WIDTH {
-            FlowLayout::Vertical
-        } else {
-            FlowLayout::Horizontal
-        };
+        let layout = CardLayout::from_settings(inner.width);
         if layout != self.layout {
             self.layout = layout;
             self.flow = conversation_flow(&self.mails, &self.selected_mail_id, layout);
@@ -200,7 +243,7 @@ impl Workspace {
 fn conversation_flow(
     mails: &[Mail],
     selected_mail_id: &str,
-    layout: FlowLayout,
+    layout: CardLayout,
 ) -> Flow<MailCard, StepEdge> {
     let Some(selected) = mails.iter().position(|mail| mail.id == selected_mail_id) else {
         return Flow::new();
@@ -220,53 +263,66 @@ fn conversation_flow(
             )
         })
         .collect();
-    let (card_width, preview_lines) =
-        settings::with(|ui| (ui.workspace_card_width, ui.workspace_preview_lines));
-    let card_height = card_height(preview_lines) as f64;
+    let rects: Vec<FlowRect> = match layout.arrangement {
+        Arrangement::Adaptive(_) => {
+            vec![
+                FlowRect::from_coords(0.0, 0.0, layout.width(), layout.height());
+                conversation.len()
+            ]
+        }
+        Arrangement::Snake(columns) => (0..conversation.len())
+            .map(|index| snake_rect(index, columns, layout))
+            .collect(),
+    };
+    let indices: std::collections::HashMap<&str, usize> = conversation
+        .iter()
+        .enumerate()
+        .map(|(index, (mail, _))| (mail.id.as_str(), index))
+        .collect();
     let nodes = conversation
         .iter()
         .enumerate()
         .map(|(index, (mail, _))| {
-            Node::new(
+            let rect = rects[index];
+            let node = Node::new(
                 &mail.id,
-                (0.0, 0.0),
-                (f64::from(card_width), card_height),
+                rect.position,
+                rect.dimensions,
                 MailCard::new(mail, index + 1, conversation.len()),
-            )
-            .with_source_position(match layout {
-                FlowLayout::Horizontal => HandlePosition::Right,
-                FlowLayout::Vertical => HandlePosition::Bottom,
-            })
-            .with_target_position(match layout {
-                FlowLayout::Horizontal => HandlePosition::Left,
-                FlowLayout::Vertical => HandlePosition::Top,
-            })
-            .with_selected(mail.id == selected_mail_id)
+            );
+            let node = match layout.arrangement {
+                Arrangement::Adaptive(orientation) => node
+                    .with_source_position(orientation.source_side())
+                    .with_target_position(orientation.target_side()),
+                Arrangement::Snake(_) => node.with_handles(side_handles()),
+            };
+            node.with_selected(mail.id == selected_mail_id)
         })
         .collect();
     let edges: Vec<Edge<StepEdge>> = conversation
         .iter()
-        .filter_map(|(mail, parent_id)| {
+        .enumerate()
+        .filter_map(|(index, (mail, parent_id))| {
             let parent_id = (*parent_id)?;
-            conversation
-                .iter()
-                .any(|(parent, _)| parent.id == parent_id)
-                .then(|| {
-                    let edge = Edge::new(format!("reply-{}", mail.id), parent_id, &mail.id);
-                    let edge = match layout {
-                        FlowLayout::Horizontal => edge
-                            .with_source_side(HandlePosition::Right)
-                            .with_target_side(HandlePosition::Left),
-                        FlowLayout::Vertical => edge
-                            .with_source_side(HandlePosition::Bottom)
-                            .with_target_side(HandlePosition::Top),
-                    };
-                    edge.with_content(
-                        StepEdge::default()
-                            .with_stem_length(2.0)
-                            .with_style(reply_style(selected_path.contains(mail.id.as_str()))),
-                    )
-                })
+            let parent_index = *indices.get(parent_id)?;
+            let from = rects[parent_index];
+            let to = rects[index];
+            let edge = Edge::new(format!("reply-{}", mail.id), parent_id, &mail.id);
+            let edge = match layout.arrangement {
+                Arrangement::Adaptive(orientation) => edge
+                    .with_source_side(orientation.source_side())
+                    .with_target_side(orientation.target_side()),
+                Arrangement::Snake(_) => edge
+                    .with_source_side(HandlePosition::facing(&from, to.center()))
+                    .with_target_side(HandlePosition::facing(&to, from.center())),
+            };
+            Some(
+                edge.with_content(
+                    StepEdge::default()
+                        .with_stem_length(2.0)
+                        .with_style(reply_style(selected_path.contains(mail.id.as_str()))),
+                ),
+            )
         })
         .collect();
 
@@ -280,20 +336,89 @@ fn conversation_flow(
         .with_selection_reveal(SelectionReveal::EnsureVisible)
         .with_min_zoom(0.8)
         .with_max_zoom(1.25);
-    let sugiyama = match layout {
-        FlowLayout::Horizontal => Sugiyama::horizontal(),
-        FlowLayout::Vertical => Sugiyama::vertical(),
+    if let Arrangement::Adaptive(orientation) = layout.arrangement {
+        let sugiyama = match orientation {
+            FlowOrientation::Horizontal => Sugiyama::horizontal(),
+            FlowOrientation::Vertical => Sugiyama::vertical(),
+        }
+        .with_node_spacing(3.0)
+        .with_rank_spacing(4.0)
+        .with_margin(3.0);
+        flow.apply_layout(sugiyama);
     }
-    .with_node_spacing(3.0)
-    .with_rank_spacing(4.0)
-    .with_margin(3.0);
-    flow.apply_layout(sugiyama);
     flow.request_fit_view_with_options(
         FitViewOptions::default()
             .with_padding(2.0)
             .with_zoom_range(0.8, 1.0),
     );
     flow
+}
+
+impl FlowOrientation {
+    fn source_side(self) -> HandlePosition {
+        match self {
+            Self::Horizontal => HandlePosition::Right,
+            Self::Vertical => HandlePosition::Bottom,
+        }
+    }
+
+    fn target_side(self) -> HandlePosition {
+        self.source_side().opposite()
+    }
+}
+
+/// Uses the usual flow unless the config asks for a snake.
+fn arrangement(snake: bool, area_width: u16, card_width: u16) -> Arrangement {
+    if snake {
+        return Arrangement::Snake(snake_columns(area_width, card_width));
+    }
+    let orientation = if area_width < HORIZONTAL_LAYOUT_WIDTH {
+        FlowOrientation::Vertical
+    } else {
+        FlowOrientation::Horizontal
+    };
+    Arrangement::Adaptive(orientation)
+}
+
+/// How many cards fit side by side in the map.
+fn snake_columns(area_width: u16, card_width: u16) -> usize {
+    let card_width = usize::from(card_width).max(1);
+    let margin = SNAKE_MARGIN as usize * 2;
+    let gap = SNAKE_GAP_X as usize;
+    let available = usize::from(area_width).saturating_sub(margin);
+    ((available + gap) / (card_width + gap)).max(1)
+}
+
+/// The place of a card in the snake: rows run left to right, then right to left.
+fn snake_rect(index: usize, columns: usize, layout: CardLayout) -> FlowRect {
+    let columns = columns.max(1);
+    let row = index / columns;
+    let offset = index % columns;
+    let column = if row.is_multiple_of(2) {
+        offset
+    } else {
+        columns - 1 - offset
+    };
+    FlowRect::from_coords(
+        SNAKE_MARGIN + column as f64 * (layout.width() + SNAKE_GAP_X),
+        SNAKE_MARGIN + row as f64 * (layout.height() + SNAKE_GAP_Y),
+        layout.width(),
+        layout.height(),
+    )
+}
+
+/// A handle on every side, so each edge can leave and arrive facing its neighbour.
+fn side_handles() -> Vec<Handle> {
+    HandlePosition::ALL
+        .into_iter()
+        .flat_map(|side| {
+            let id = side.side_name();
+            [
+                Handle::source(side).with_id(id).with_hidden(true),
+                Handle::target(side).with_id(id).with_hidden(true),
+            ]
+        })
+        .collect()
 }
 
 /// The height of a card with room for `preview_lines` rows of message text.
@@ -335,7 +460,18 @@ mod tests {
     use crate::mail::demo_mails;
     use ratatui::{Terminal, backend::TestBackend};
 
-    use super::{FlowLayout, Workspace, card_height, conversation_flow, selected_path_ids};
+    use super::{
+        Arrangement, CardLayout, FlowOrientation, Workspace, arrangement, card_height,
+        conversation_flow, selected_path_ids, snake_columns,
+    };
+
+    fn layout(arrangement: Arrangement) -> CardLayout {
+        CardLayout {
+            arrangement,
+            card_width: 40,
+            preview_lines: 3,
+        }
+    }
 
     #[test]
     fn sizes_cards_for_the_configured_preview() {
@@ -345,21 +481,80 @@ mod tests {
     }
 
     #[test]
+    fn keeps_the_usual_presentation_unless_snake_is_chosen() {
+        assert_eq!(
+            arrangement(false, 200, 40),
+            Arrangement::Adaptive(FlowOrientation::Horizontal)
+        );
+        assert_eq!(
+            arrangement(false, 80, 40),
+            Arrangement::Adaptive(FlowOrientation::Vertical)
+        );
+        assert_eq!(arrangement(true, 104, 40), Arrangement::Snake(2));
+    }
+
+    #[test]
+    fn counts_the_cards_that_fit_side_by_side() {
+        assert_eq!(snake_columns(40, 40), 1);
+        assert_eq!(snake_columns(104, 40), 2);
+        assert_eq!(snake_columns(200, 40), 4);
+    }
+
+    #[test]
     fn lays_out_conversations_horizontally() {
-        let flow = conversation_flow(&demo_mails(), "project-2", FlowLayout::Horizontal);
+        let flow = conversation_flow(
+            &demo_mails(),
+            "project-2",
+            layout(Arrangement::Adaptive(FlowOrientation::Horizontal)),
+        );
 
         assert!(
             flow.node("project-1").unwrap().position.x < flow.node("project-2").unwrap().position.x
+        );
+        assert_eq!(
+            flow.node("project-1").unwrap().position.y,
+            flow.node("project-2").unwrap().position.y
         );
         assert!(flow.node("project-2").unwrap().selected);
     }
 
     #[test]
     fn lays_out_conversations_vertically() {
-        let flow = conversation_flow(&demo_mails(), "project-2", FlowLayout::Vertical);
+        let flow = conversation_flow(
+            &demo_mails(),
+            "project-2",
+            layout(Arrangement::Adaptive(FlowOrientation::Vertical)),
+        );
 
         assert!(
             flow.node("project-1").unwrap().position.y < flow.node("project-2").unwrap().position.y
+        );
+    }
+
+    #[test]
+    fn wraps_long_chains_like_a_snake() {
+        let flow = conversation_flow(&demo_mails(), "project-3", layout(Arrangement::Snake(2)));
+        let first = flow.node("project-1").unwrap();
+        let second = flow.node("project-2").unwrap();
+        let third = flow.node("project-3").unwrap();
+
+        assert!(first.position.x < second.position.x);
+        assert_eq!(first.position.y, second.position.y);
+        assert_eq!(second.position.x, third.position.x);
+        assert!(third.position.y > second.position.y);
+        assert_eq!(
+            flow.edge("reply-project-3")
+                .unwrap()
+                .source_handle
+                .as_deref(),
+            Some("bottom")
+        );
+        assert_eq!(
+            flow.edge("reply-project-3")
+                .unwrap()
+                .target_handle
+                .as_deref(),
+            Some("top")
         );
     }
 
@@ -387,7 +582,11 @@ mod tests {
             )
             .with_references(&["project-1"]),
         );
-        let flow = conversation_flow(&mails, "branch", FlowLayout::Horizontal);
+        let flow = conversation_flow(
+            &mails,
+            "branch",
+            layout(Arrangement::Adaptive(FlowOrientation::Horizontal)),
+        );
 
         assert!(flow.edge("reply-branch").is_some());
         assert!(flow.node("project-1").is_some());

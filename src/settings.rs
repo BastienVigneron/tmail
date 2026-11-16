@@ -18,6 +18,8 @@ pub struct UiConfig {
     pub dock_min_width: u16,
     /// The widest the reader window opens, in columns; 0 for no limit.
     pub reader_max_width: u16,
+    /// Conversation map arrangement: `adaptive` or `snake`.
+    pub workspace_layout: String,
     /// Width of each card in the conversation map, in columns.
     pub workspace_card_width: u16,
     /// Lines of message text previewed on each card in the conversation map.
@@ -68,6 +70,7 @@ impl Default for UiConfig {
             split_min_width: 78,
             dock_min_width: 112,
             reader_max_width: 0,
+            workspace_layout: "adaptive".into(),
             workspace_card_width: 40,
             workspace_preview_lines: 3,
             time_format: "%H:%M".into(),
@@ -99,6 +102,9 @@ impl UiConfig {
     pub fn validate(&self) -> Result<(), String> {
         if !(16..=200).contains(&self.inbox_width) || !(24..=200).contains(&self.reader_width) {
             return Err("ui.inbox_width must be 16 to 200 and ui.reader_width 24 to 200.".into());
+        }
+        if !["adaptive", "snake"].contains(&self.workspace_layout.as_str()) {
+            return Err("ui.workspace_layout must be \"adaptive\" or \"snake\".".into());
         }
         if !(16..=200).contains(&self.workspace_card_width) {
             return Err("ui.workspace_card_width must be 16 to 200.".into());
@@ -337,6 +343,9 @@ mod tests {
     fn checks_values_and_reader_trust() {
         let mut ui = UiConfig::default();
         assert!(ui.validate().is_ok());
+        ui.workspace_layout = "diagonal".into();
+        assert!(ui.validate().is_err());
+        ui.workspace_layout = "snake".into();
         ui.workspace_card_width = 15;
         assert!(ui.validate().is_err());
         ui.workspace_card_width = 16;
