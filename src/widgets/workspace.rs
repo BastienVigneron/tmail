@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::{
     mail::{Mail, parents, roots},
-    theme,
+    settings, theme,
     widgets::mail_card::MailCard,
 };
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
@@ -17,8 +17,9 @@ use ratatui::{
     widgets::{Block, Borders},
 };
 
-const CARD_WIDTH: usize = 40;
-const CARD_HEIGHT: usize = 9;
+/// Rows a card uses besides the body preview: borders, subject, sender, a gap and
+/// the footer.
+const CARD_CHROME_HEIGHT: usize = 6;
 const HORIZONTAL_LAYOUT_WIDTH: u16 = 104;
 /// Columns the viewport moves for each shift+arrow press.
 const PAN_STEP: f64 = 6.0;
@@ -219,6 +220,9 @@ fn conversation_flow(
             )
         })
         .collect();
+    let (card_width, preview_lines) =
+        settings::with(|ui| (ui.workspace_card_width, ui.workspace_preview_lines));
+    let card_height = card_height(preview_lines) as f64;
     let nodes = conversation
         .iter()
         .enumerate()
@@ -226,7 +230,7 @@ fn conversation_flow(
             Node::new(
                 &mail.id,
                 (0.0, 0.0),
-                (CARD_WIDTH as f64, CARD_HEIGHT as f64),
+                (f64::from(card_width), card_height),
                 MailCard::new(mail, index + 1, conversation.len()),
             )
             .with_source_position(match layout {
@@ -292,6 +296,11 @@ fn conversation_flow(
     flow
 }
 
+/// The height of a card with room for `preview_lines` rows of message text.
+fn card_height(preview_lines: u16) -> usize {
+    CARD_CHROME_HEIGHT + usize::from(preview_lines)
+}
+
 fn reply_style(active: bool) -> EdgeStyle {
     let style = Style::default().fg(if active {
         theme::accent()
@@ -326,7 +335,14 @@ mod tests {
     use crate::mail::demo_mails;
     use ratatui::{Terminal, backend::TestBackend};
 
-    use super::{FlowLayout, Workspace, conversation_flow, selected_path_ids};
+    use super::{FlowLayout, Workspace, card_height, conversation_flow, selected_path_ids};
+
+    #[test]
+    fn sizes_cards_for_the_configured_preview() {
+        assert_eq!(card_height(0), 6);
+        assert_eq!(card_height(3), 9);
+        assert_eq!(card_height(8), 14);
+    }
 
     #[test]
     fn lays_out_conversations_horizontally() {

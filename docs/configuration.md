@@ -217,6 +217,8 @@ If you encrypt to someone whose key you don't have, tmail asks their domain for 
 | `split_min_width` | `78` | On narrower terminals only one pane shows at a time. |
 | `dock_min_width` | `112` | With `reader.layout = "docked"`, the reader sits beside the map on terminals at least this wide. |
 | `reader_max_width` | `0` | The widest the reader window opens, in columns. `0` means no limit. |
+| `workspace_card_width` | `40` | Width of each card in the conversation map, in columns. |
+| `workspace_preview_lines` | `3` | Lines of message text shown on each card in the conversation map. `0` shows only the headers. |
 | `time_format` | `%H:%M` | Dates for today's mail. |
 | `day_format` | `%-d %b` | Dates for mail from this year. |
 | `date_format` | `%-d %b %Y` | Dates for older mail. |

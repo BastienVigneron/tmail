@@ -18,6 +18,10 @@ pub struct UiConfig {
     pub dock_min_width: u16,
     /// The widest the reader window opens, in columns; 0 for no limit.
     pub reader_max_width: u16,
+    /// Width of each card in the conversation map, in columns.
+    pub workspace_card_width: u16,
+    /// Lines of message text previewed on each card in the conversation map.
+    pub workspace_preview_lines: u16,
     /// Date formats (strftime) for today, this year, older mail and message headers.
     pub time_format: String,
     pub day_format: String,
@@ -64,6 +68,8 @@ impl Default for UiConfig {
             split_min_width: 78,
             dock_min_width: 112,
             reader_max_width: 0,
+            workspace_card_width: 40,
+            workspace_preview_lines: 3,
             time_format: "%H:%M".into(),
             day_format: "%-d %b".into(),
             date_format: "%-d %b %Y".into(),
@@ -93,6 +99,12 @@ impl UiConfig {
     pub fn validate(&self) -> Result<(), String> {
         if !(16..=200).contains(&self.inbox_width) || !(24..=200).contains(&self.reader_width) {
             return Err("ui.inbox_width must be 16 to 200 and ui.reader_width 24 to 200.".into());
+        }
+        if !(16..=200).contains(&self.workspace_card_width) {
+            return Err("ui.workspace_card_width must be 16 to 200.".into());
+        }
+        if self.workspace_preview_lines > 20 {
+            return Err("ui.workspace_preview_lines must be 0 to 20.".into());
         }
         if !["newest", "oldest"].contains(&self.sort.as_str()) {
             return Err("ui.sort must be \"newest\" or \"oldest\".".into());
@@ -325,6 +337,12 @@ mod tests {
     fn checks_values_and_reader_trust() {
         let mut ui = UiConfig::default();
         assert!(ui.validate().is_ok());
+        ui.workspace_card_width = 15;
+        assert!(ui.validate().is_err());
+        ui.workspace_card_width = 16;
+        ui.workspace_preview_lines = 21;
+        assert!(ui.validate().is_err());
+        ui.workspace_preview_lines = 20;
         ui.time_format = "%Q".into();
         assert!(ui.validate().is_err());
         let reader = ReaderConfig {
