@@ -217,6 +217,7 @@ If you encrypt to someone whose key you don't have, tmail asks their domain for 
 | `split_min_width` | `78` | On narrower terminals only one pane shows at a time. |
 | `dock_min_width` | `112` | With `reader.layout = "docked"`, the reader sits beside the map on terminals at least this wide. |
 | `reader_max_width` | `0` | The widest the reader window opens, in columns. `0` means no limit. |
+| `workspace_layout` | `adaptive` | `adaptive` continues the thread to the right, or down in a narrow map. `snake` wraps it through rows instead. |
 | `workspace_card_width` | `40` | Width of each card in the conversation map, in columns. |
 | `workspace_preview_lines` | `3` | Lines of message text shown on each card in the conversation map. `0` shows only the headers. |
 | `time_format` | `%H:%M` | Dates for today's mail. |
@@ -242,6 +243,8 @@ If you encrypt to someone whose key you don't have, tmail asks their domain for 
 | `accessible` | `false` | Settings for screen readers and magnifiers, described below. |
 
 Date formats use the usual strftime codes. `%d.%m.%Y` gives `14.03.2026`, `%b %e` gives `Mar 14`.
+
+With `workspace_layout = "snake"`, cards in the conversation map wrap into rows and reverse direction on each row, so a long thread uses the available space instead of running off to the right. `workspace_card_width` sets the width of each card, and the map fits as many as the window allows. The default, `adaptive`, keeps the usual presentation.
 
 ### Language
 
