@@ -48,18 +48,18 @@ Start tmail, sign in once when it asks, and the password is kept in your system 
 
 ## Identity and local mail
 
-| Setting | What it does |
-| --- | --- |
-| `name` | Your name, shown to the people you write to. |
-| `email` | Your address. Also used to recognise your own messages. |
-| `signature` | Added below new messages and replies. Use `\n` for line breaks. |
-| `maildir` | The folder that holds your mail, in Maildir format. tmail creates it if needed. |
-| `download_dir` | Where saved attachments go. Defaults to your Downloads folder. |
-| `editor` | The program that edits message bodies, as a list: `["nvim", "+set tw=72"]`. Defaults to `$EDITOR`. Use `["builtin"]` for the editor inside tmail. |
-| `send_command` | A program that sends mail, such as `["msmtp", "-a", "work"]`. Only for accounts without `[remote]`. |
-| `notifications` | Set to `false` to turn off desktop notifications for new mail. |
-| `aliases` | Other addresses you send from, such as `["Ada <ada@alias.example>", "info@example.com"]`. |
-| `contacts` | The address book file. Defaults to `contacts.vcf` next to the config. |
+| Setting         | What it does                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`          | Your name, shown to the people you write to.                                                                                                      |
+| `email`         | Your address. Also used to recognise your own messages.                                                                                           |
+| `signature`     | Added below new messages and replies. Use `\n` for line breaks.                                                                                   |
+| `maildir`       | The folder that holds your mail, in Maildir format. tmail creates it if needed.                                                                   |
+| `download_dir`  | Where saved attachments go. Defaults to your Downloads folder.                                                                                    |
+| `editor`        | The program that edits message bodies, as a list: `["nvim", "+set tw=72"]`. Defaults to `$EDITOR`. Use `["builtin"]` for the editor inside tmail. |
+| `send_command`  | A program that sends mail, such as `["msmtp", "-a", "work"]`. Only for accounts without `[remote]`.                                               |
+| `notifications` | Set to `false` to turn off desktop notifications for new mail.                                                                                    |
+| `aliases`       | Other addresses you send from, such as `["Ada <ada@alias.example>", "info@example.com"]`.                                                         |
+| `contacts`      | The address book file. Defaults to `contacts.vcf` next to the config.                                                                             |
 
 ### Other addresses
 
@@ -120,25 +120,25 @@ When the server turns your password down, tmail shows the reason it gave, with a
 
 With a `[remote]` table tmail syncs the account over IMAP and sends over SMTP by itself. You do not need `send_command` then, and setting both is an error.
 
-| Setting | Default | What it does |
-| --- | --- | --- |
-| `imap_host` | | The IMAP server name or IP address (IPv6 works too), without `imaps://` or a port. |
-| `imap_port` | `993` | |
-| `imap_security` | `auto` | `tls`, `starttls` or `auto`. Auto uses STARTTLS on ports 143, 587 and 25 and TLS everywhere else. |
-| `smtp_host` | | The SMTP server name. |
-| `smtp_port` | `465` | |
-| `smtp_security` | `auto` | Same choices as `imap_security`. |
-| `username` | | Usually your address. |
-| `auth` | `password` | `password` or `xoauth2`. |
-| `inbox` | `INBOX` | The server's name for the inbox. |
-| `sent` | | The Sent folder name, if tmail does not find it by itself. |
-| `sync_interval_secs` | `60` | How often to sync, at least 30. With `0` tmail syncs once at start and then only when you type `:sync`. |
-| `batch_size` | `200` | How many older messages to download per sync, per folder. Newest first. |
-| `timeout_secs` | `30` | How long to wait for the server before giving up. |
-| `watch` | the inbox | Folders to watch for new mail as it arrives (IMAP IDLE): `["INBOX", "Lists"]`. Each one keeps a connection open. |
-| `max_download_bytes` | `0` | Messages larger than this arrive as headers only. Press `D` on one to download the rest. `0` downloads everything. |
-| `smtp_username` | | A different username for SMTP, for the few providers that need one. Its password comes from `smtp_password_env`, `smtp_password_command` or the keyring, like the main one. |
-| `tls_certificate` | | A PEM file with certificates to trust for this account, besides the ones your system trusts. tmail writes it when you trust a certificate in the account form. |
+| Setting              | Default    | What it does                                                                                                                                                                |
+| -------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `imap_host`          |            | The IMAP server name or IP address (IPv6 works too), without `imaps://` or a port.                                                                                          |
+| `imap_port`          | `993`      |                                                                                                                                                                             |
+| `imap_security`      | `auto`     | `tls`, `starttls` or `auto`. Auto uses STARTTLS on ports 143, 587 and 25 and TLS everywhere else.                                                                           |
+| `smtp_host`          |            | The SMTP server name.                                                                                                                                                       |
+| `smtp_port`          | `465`      |                                                                                                                                                                             |
+| `smtp_security`      | `auto`     | Same choices as `imap_security`.                                                                                                                                            |
+| `username`           |            | Usually your address.                                                                                                                                                       |
+| `auth`               | `password` | `password` or `xoauth2`.                                                                                                                                                    |
+| `inbox`              | `INBOX`    | The server's name for the inbox.                                                                                                                                            |
+| `sent`               |            | The Sent folder name, if tmail does not find it by itself.                                                                                                                  |
+| `sync_interval_secs` | `60`       | How often to sync, at least 30. With `0` tmail syncs once at start and then only when you type `:sync`.                                                                     |
+| `batch_size`         | `200`      | How many older messages to download per sync, per folder. Newest first.                                                                                                     |
+| `timeout_secs`       | `30`       | How long to wait for the server before giving up.                                                                                                                           |
+| `watch`              | the inbox  | Folders to watch for new mail as it arrives (IMAP IDLE): `["INBOX", "Lists"]`. Each one keeps a connection open.                                                            |
+| `max_download_bytes` | `0`        | Messages larger than this arrive as headers only. Press `D` on one to download the rest. `0` downloads everything.                                                          |
+| `smtp_username`      |            | A different username for SMTP, for the few providers that need one. Its password comes from `smtp_password_env`, `smtp_password_command` or the keyring, like the main one. |
+| `tls_certificate`    |            | A PEM file with certificates to trust for this account, besides the ones your system trusts. tmail writes it when you trust a certificate in the account form.              |
 
 ### Passwords
 
@@ -186,17 +186,17 @@ If you point tmail at a Maildir that already has mail, the first sync does not c
 
 tmail signs and encrypts with your own GnuPG setup: `gpg` for OpenPGP and `gpgsm` for S/MIME. Your keys stay where they are.
 
-| Setting | Default | What it does |
-| --- | --- | --- |
-| `sign` | `false` | New messages start signed. |
-| `encrypt` | `false` | New messages start encrypted. |
-| `smime` | `false` | Use S/MIME instead of OpenPGP by default. |
-| `key` | your address | The key or certificate to sign with. |
-| `gpg` | `gpg` | Path to the OpenPGP program. |
-| `gpgsm` | `gpgsm` | Path to the S/MIME program. |
-| `home` | | A GnuPG home folder other than your usual one. |
-| `autocrypt` | `false` | Send your public key with every message and save the keys others send this way. |
-| `wkd` | `true` | Before encrypting, look up missing recipient keys at their domain. |
+| Setting     | Default      | What it does                                                                    |
+| ----------- | ------------ | ------------------------------------------------------------------------------- |
+| `sign`      | `false`      | New messages start signed.                                                      |
+| `encrypt`   | `false`      | New messages start encrypted.                                                   |
+| `smime`     | `false`      | Use S/MIME instead of OpenPGP by default.                                       |
+| `key`       | your address | The key or certificate to sign with.                                            |
+| `gpg`       | `gpg`        | Path to the OpenPGP program.                                                    |
+| `gpgsm`     | `gpgsm`      | Path to the S/MIME program.                                                     |
+| `home`      |              | A GnuPG home folder other than your usual one.                                  |
+| `autocrypt` | `false`      | Send your public key with every message and save the keys others send this way. |
+| `wkd`       | `true`       | Before encrypting, look up missing recipient keys at their domain.              |
 
 You can change the choice for each message on the Security line of the composer. Encrypted messages are encrypted to you as well, so you can read your own Sent copy. Replies to encrypted mail start encrypted.
 
@@ -210,37 +210,37 @@ If you encrypt to someone whose key you don't have, tmail asks their domain for 
 
 ## Interface: `[ui]`
 
-| Setting | Default | What it does |
-| --- | --- | --- |
-| `inbox_width` | `30` | Width of the conversation list. You can also drag its border with the mouse. |
-| `reader_width` | `44` | Width of the reader beside the map, with `reader.layout = "docked"`. |
-| `split_min_width` | `78` | On narrower terminals only one pane shows at a time. |
-| `dock_min_width` | `112` | With `reader.layout = "docked"`, the reader sits beside the map on terminals at least this wide. |
-| `reader_max_width` | `0` | The widest the reader window opens, in columns. `0` means no limit. |
-| `workspace_layout` | `adaptive` | `adaptive` continues the thread to the right, or down in a narrow map. `snake` wraps it through rows instead. |
-| `workspace_card_width` | `40` | Width of each card in the conversation map, in columns. |
-| `workspace_preview_lines` | `3` | Lines of message text shown on each card in the conversation map. `0` shows only the headers. |
-| `time_format` | `%H:%M` | Dates for today's mail. |
-| `day_format` | `%-d %b` | Dates for mail from this year. |
-| `date_format` | `%-d %b %Y` | Dates for older mail. |
-| `long_date_format` | `%a %-d %b %Y %H:%M` | The date in the message header. |
-| `mark_read_on_open` | `true` | Opening a message marks it read. |
-| `confirm_quit` | `false` | Press `q` twice to quit. |
-| `show_hints` | `true` | Show key hints at the bottom. |
-| `mouse` | `true` | Use the mouse. Turn off if you want your terminal's own text selection. |
-| `sort` | `newest` | `newest` or `oldest` conversation first. |
-| `thread_by_subject` | `true` | Group replies that lack reply headers by their subject. |
-| `start_folder` | `INBOX` | The folder shown at start. |
-| `start_filter` | `all` | `all`, `unread` or `starred`. |
-| `scroll_lines` | `3` | Lines per mouse wheel step. |
-| `page_lines` | `10` | Lines per page in the reader. |
-| `unread_marker` | `●` | Shown before unread conversations. |
-| `star_marker` | `★` | Shown before starred conversations. |
-| `hide_folders` | `[]` | Folders to leave out of the folder list. |
-| `notify_command` | | Your own program for new-mail notifications. `{title}` and `{body}` are filled in: `["dunstify", "{title}", "{body}"]`. |
-| `script` | `init.lua` | The Lua script to run at start. See [scripting.md](scripting.md). |
-| `language` | `auto` | The interface language: `en`, `tr`, or `auto` to follow your system. |
-| `accessible` | `false` | Settings for screen readers and magnifiers, described below. |
+| Setting                   | Default              | What it does                                                                                                            |
+| ------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `inbox_width`             | `30`                 | Width of the conversation list. You can also drag its border with the mouse.                                            |
+| `reader_width`            | `44`                 | Width of the reader beside the map, with `reader.layout = "docked"`.                                                    |
+| `split_min_width`         | `78`                 | On narrower terminals only one pane shows at a time.                                                                    |
+| `dock_min_width`          | `112`                | With `reader.layout = "docked"`, the reader sits beside the map on terminals at least this wide.                        |
+| `reader_max_width`        | `0`                  | The widest the reader window opens, in columns. `0` means no limit.                                                     |
+| `workspace_layout`        | `adaptive`           | `adaptive` continues the thread to the right, or down in a narrow map. `snake` wraps it through rows instead.           |
+| `workspace_card_width`    | `40`                 | Width of each card in the conversation map, in columns.                                                                 |
+| `workspace_preview_lines` | `3`                  | Lines of message text shown on each card in the conversation map. `0` shows only the headers.                           |
+| `time_format`             | `%H:%M`              | Dates for today's mail.                                                                                                 |
+| `day_format`              | `%-d %b`             | Dates for mail from this year.                                                                                          |
+| `date_format`             | `%-d %b %Y`          | Dates for older mail.                                                                                                   |
+| `long_date_format`        | `%a %-d %b %Y %H:%M` | The date in the message header.                                                                                         |
+| `mark_read_on_open`       | `true`               | Opening a message marks it read.                                                                                        |
+| `confirm_quit`            | `false`              | Press `q` twice to quit.                                                                                                |
+| `show_hints`              | `true`               | Show key hints at the bottom.                                                                                           |
+| `mouse`                   | `true`               | Use the mouse. Turn off if you want your terminal's own text selection.                                                 |
+| `sort`                    | `newest`             | `newest` or `oldest` conversation first.                                                                                |
+| `thread_by_subject`       | `true`               | Group replies that lack reply headers by their subject.                                                                 |
+| `start_folder`            | `INBOX`              | The folder shown at start.                                                                                              |
+| `start_filter`            | `all`                | `all`, `unread` or `starred`.                                                                                           |
+| `scroll_lines`            | `3`                  | Lines per mouse wheel step.                                                                                             |
+| `page_lines`              | `10`                 | Lines per page in the reader.                                                                                           |
+| `unread_marker`           | `●`                  | Shown before unread conversations.                                                                                      |
+| `star_marker`             | `★`                  | Shown before starred conversations.                                                                                     |
+| `hide_folders`            | `[]`                 | Folders to leave out of the folder list.                                                                                |
+| `notify_command`          |                      | Your own program for new-mail notifications. `{title}` and `{body}` are filled in: `["dunstify", "{title}", "{body}"]`. |
+| `script`                  | `init.lua`           | The Lua script to run at start. See [scripting.md](scripting.md).                                                       |
+| `language`                | `auto`               | The interface language: `en`, `tr`, or `auto` to follow your system.                                                    |
+| `accessible`              | `false`              | Settings for screen readers and magnifiers, described below.                                                            |
 
 Date formats use the usual strftime codes. `%d.%m.%Y` gives `14.03.2026`, `%b %e` gives `Mar 14`.
 
@@ -273,20 +273,20 @@ tmail also follows the [NO_COLOR](https://no-color.org) convention: when the `NO
 
 ## Writing mail: `[compose]`
 
-| Setting | Default | What it does |
-| --- | --- | --- |
-| `format` | `plain` | `plain`, `html` or `markdown` for new messages. You can switch per message with space on the Format line. |
-| `reply_prefix` | `Re: ` | Put in front of the subject of replies. |
-| `forward_prefix` | `Fwd: ` | Put in front of the subject of forwards. |
-| `attribution` | `On {date}, {from} wrote:` | The line above quoted text. |
-| `quote_prefix` | `> ` | Put in front of each quoted line. |
-| `large_attachment_mb` | `18` | Warn before sending more than this in attachments. |
+| Setting               | Default                    | What it does                                                                                              |
+| --------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `format`              | `plain`                    | `plain`, `html` or `markdown` for new messages. You can switch per message with space on the Format line. |
+| `reply_prefix`        | `Re:`                      | Put in front of the subject of replies.                                                                   |
+| `forward_prefix`      | `Fwd:`                     | Put in front of the subject of forwards.                                                                  |
+| `attribution`         | `On {date}, {from} wrote:` | The line above quoted text.                                                                               |
+| `quote_prefix`        | `>`                        | Put in front of each quoted line.                                                                         |
+| `large_attachment_mb` | `18`                       | Warn before sending more than this in attachments.                                                        |
 
 A German setup might use `reply_prefix = "AW: "` and `attribution = "{from} schrieb am {date}:"`.
 
 ### Writing in Markdown
 
-With the Markdown format you write the body in Markdown and tmail sends two versions: an HTML one with headings, lists, tables, task lists, links and quotes laid out properly, and your Markdown text for people who read plain text. Code in a fenced block that names its language, such as ` ```rust `, is coloured. A line break you type stays a line break, as in chat apps, and the signature after `-- ` is left as you wrote it. Drafts keep the Markdown, so they open the same way again.
+With the Markdown format you write the body in Markdown and tmail sends two versions: an HTML one with headings, lists, tables, task lists, links and quotes laid out properly, and your Markdown text for people who read plain text. Code in a fenced block that names its language, such as `` ```rust ``, is coloured. A line break you type stays a line break, as in chat apps, and the signature after `-- ` is left as you wrote it. Drafts keep the Markdown, so they open the same way again.
 
 ## Reading mail: `[reader]`
 
@@ -296,15 +296,15 @@ To scroll, use the wheel, drag the scroll bar on the right edge, click anywhere 
 
 HTML mail is drawn the way its sender designed it: page and card backgrounds, coloured headers, buttons, tables with real columns, centred layouts and pictures where they belong. Links are clickable where they appear. Press `t` to switch between the message's own colours and your theme's.
 
-| Setting | Default | What it does |
-| --- | --- | --- |
-| `html_colors` | `original` | `original` uses the message's colours. `theme` keeps your theme's background and only keeps coloured blocks and buttons. |
-| `layout` | `popup` | `popup` opens messages in a window. `docked` puts the reader beside the conversation map on wide screens instead. |
-| `popup_width` | `84` | Width of the window, in percent of the screen. |
-| `popup_height` | `90` | Height of the window, in percent of the screen. |
-| `remote_images` | `false` | Load remote images in every message. |
-| `remote_images_from` | `[]` | Load them only for these senders. Full addresses or whole domains: `["@github.com", "friend@example.com"]`. |
-| `clean_links` | `true` | Remove tracking parameters such as `utm_source` and `fbclid` from links before opening them. |
+| Setting              | Default    | What it does                                                                                                             |
+| -------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `html_colors`        | `original` | `original` uses the message's colours. `theme` keeps your theme's background and only keeps coloured blocks and buttons. |
+| `layout`             | `popup`    | `popup` opens messages in a window. `docked` puts the reader beside the conversation map on wide screens instead.        |
+| `popup_width`        | `84`       | Width of the window, in percent of the screen.                                                                           |
+| `popup_height`       | `90`       | Height of the window, in percent of the screen.                                                                          |
+| `remote_images`      | `false`    | Load remote images in every message.                                                                                     |
+| `remote_images_from` | `[]`       | Load them only for these senders. Full addresses or whole domains: `["@github.com", "friend@example.com"]`.              |
+| `clean_links`        | `true`     | Remove tracking parameters such as `utm_source` and `fbclid` from links before opening them.                             |
 
 Remote images are blocked until you press `I`, because they tell the sender when and where you read the message. Pictures need a terminal that can show them, such as kitty, WezTerm, iTerm2, foot or Ghostty. Elsewhere you see their description instead.
 
@@ -350,23 +350,23 @@ Keys are written as a single character (`e`, `E`, `#`), with `ctrl+` or `alt+` i
 
 These are the actions you can rebind:
 
-| Action | Key | | Action | Key |
-| --- | --- | --- | --- | --- |
-| `compose` | `c` | | `links` | `l` |
-| `reply` | `r` | | `attachments` | `v` |
-| `reply_all` | `A` | | `images` | `I` |
-| `forward` | `F` | | `browser` | `O` |
-| `archive` | `a` | | `download` | `D` |
-| `trash` | `d` | | `unsubscribe` | `U` |
-| `toggle_read` | `m` | | `reload` | `R` |
-| `toggle_star` | `s` | | `next` | `n` |
-| `undo` | `u` | | `previous` | `N` |
-| `move` | `M` | | `retry` | `x` |
-| `folders` | `g` | | `review` | `z` |
-| `accounts` | `p` | | `quit` | `q` |
-| `search` | `/` | | `help` | `?` |
-| `command` | `:` | | `spam` | `J` |
-| `contact` | `K` | | | |
+| Action        | Key |   | Action        | Key |
+| ------------- | --- | - | ------------- | --- |
+| `compose`     | `c` |   | `links`       | `l` |
+| `reply`       | `r` |   | `attachments` | `v` |
+| `reply_all`   | `A` |   | `images`      | `I` |
+| `forward`     | `F` |   | `browser`     | `O` |
+| `archive`     | `a` |   | `download`    | `D` |
+| `trash`       | `d` |   | `unsubscribe` | `U` |
+| `toggle_read` | `m` |   | `reload`      | `R` |
+| `toggle_star` | `s` |   | `next`        | `n` |
+| `undo`        | `u` |   | `previous`    | `N` |
+| `move`        | `M` |   | `retry`       | `x` |
+| `folders`     | `g` |   | `review`      | `z` |
+| `accounts`    | `p` |   | `quit`        | `q` |
+| `search`      | `/` |   | `help`        | `?` |
+| `command`     | `:` |   | `spam`        | `J` |
+| `contact`     | `K` |   |               |     |
 
 For keys that run your own code, use a script.
 
@@ -397,11 +397,11 @@ tmail understands patches sent by mail, the way Git and the Linux kernel work. W
 
 `:lore ID` opens a whole thread from lore.kernel.org, by Message-ID or by a link to it. The thread opens as a mailbox of its own, so nothing is copied to your account or its server; press `p` to go back. You can reply and review from there as usual.
 
-| Setting | Default | What it does |
-| --- | --- | --- |
-| `repo` | the folder tmail started in | The repository patches go into. |
-| `am_args` | `["-3"]` | Arguments for `git am`, such as `["-3", "--signoff"]`. |
-| `archive` | `https://lore.kernel.org/all` | The public-inbox archive `:lore` reads from. |
+| Setting   | Default                       | What it does                                           |
+| --------- | ----------------------------- | ------------------------------------------------------ |
+| `repo`    | the folder tmail started in   | The repository patches go into.                        |
+| `am_args` | `["-3"]`                      | Arguments for `git am`, such as `["-3", "--signoff"]`. |
+| `archive` | `https://lore.kernel.org/all` | The public-inbox archive `:lore` reads from.           |
 
 ## Shell completions and the manual
 

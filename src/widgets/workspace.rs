@@ -108,17 +108,18 @@ impl Workspace {
     pub fn new(mails: &[Mail], selected_mail_id: &str) -> Self {
         // The first draw knows the viewport width and reflows the cards.
         let layout = CardLayout::from_settings(0);
+        let selected_mail_id = newest_mail_id(mails, selected_mail_id);
         Self {
-            flow: conversation_flow(mails, selected_mail_id, layout),
+            flow: conversation_flow(mails, &selected_mail_id, layout),
             mails: mails.to_vec(),
-            selected_mail_id: selected_mail_id.into(),
+            selected_mail_id,
             layout,
         }
     }
 
     pub fn show_conversation(&mut self, mails: &[Mail], selected_mail_id: &str) {
         self.mails = mails.to_vec();
-        self.selected_mail_id = selected_mail_id.into();
+        self.selected_mail_id = newest_mail_id(&self.mails, selected_mail_id);
         self.flow = conversation_flow(&self.mails, &self.selected_mail_id, self.layout);
     }
 
@@ -245,14 +246,11 @@ fn conversation_flow(
     selected_mail_id: &str,
     layout: CardLayout,
 ) -> Flow<MailCard, StepEdge> {
-    let Some(selected) = mails.iter().position(|mail| mail.id == selected_mail_id) else {
+    let conversation = conversation_indices(mails, selected_mail_id);
+    if conversation.is_empty() {
         return Flow::new();
-    };
+    }
     let parents = parents(mails);
-    let roots = roots(&parents);
-    let conversation: Vec<usize> = (0..mails.len())
-        .filter(|index| roots[*index] == roots[selected])
-        .collect();
     let selected_path = selected_path_ids(mails, selected_mail_id);
     let conversation: Vec<(&Mail, Option<&str>)> = conversation
         .into_iter()
@@ -440,6 +438,29 @@ fn reply_style(active: bool) -> EdgeStyle {
     EdgeStyle::default().with_stroke_style(style)
 }
 
+/// Indices of the selected message's whole conversation, oldest message first.
+fn conversation_indices(mails: &[Mail], selected_mail_id: &str) -> Vec<usize> {
+    let Some(selected) = mails.iter().position(|mail| mail.id == selected_mail_id) else {
+        return Vec::new();
+    };
+    let parents = parents(mails);
+    let roots = roots(&parents);
+    (0..mails.len())
+        .filter(|index| roots[*index] == roots[selected])
+        .collect()
+}
+
+/// Messages are ordered oldest to newest, so the last one in the chain is the
+/// newest. It is the card a conversation should open on.
+fn newest_mail_id(mails: &[Mail], selected_mail_id: &str) -> String {
+    conversation_indices(mails, selected_mail_id)
+        .into_iter()
+        .last()
+        .and_then(|index| mails.get(index))
+        .map(|mail| mail.id.clone())
+        .unwrap_or_else(|| selected_mail_id.into())
+}
+
 fn selected_path_ids<'a>(mails: &'a [Mail], selected_mail_id: &str) -> HashSet<&'a str> {
     let parents = parents(mails);
     let mut ids = HashSet::new();
@@ -462,7 +483,7 @@ mod tests {
 
     use super::{
         Arrangement, CardLayout, FlowOrientation, Workspace, arrangement, card_height,
-        conversation_flow, selected_path_ids, snake_columns,
+        conversation_flow, newest_mail_id, selected_path_ids, snake_columns,
     };
 
     fn layout(arrangement: Arrangement) -> CardLayout {
@@ -567,6 +588,44 @@ mod tests {
         assert!(path.contains("project-1"));
         assert!(path.contains("project-3"));
         assert!(!path.contains("weekend-1"));
+    }
+
+    #[test]
+    fn opens_a_chain_on_its_newest_mail() {
+        let mails = demo_mails();
+        assert_eq!(newest_mail_id(&mails, "project-1"), "project-3");
+        assert_eq!(newest_mail_id(&mails, "project-2"), "project-3");
+        assert_eq!(newest_mail_id(&mails, "weekend-1"), "weekend-2");
+        assert_eq!(
+            Workspace::new(&mails, "project-1")
+                .selected_mail_id()
+                .as_deref(),
+            Some("project-3")
+        );
+    }
+
+    #[test]
+    fn show_conversation_also_opens_on_the_newest_mail() {
+        let mails = demo_mails();
+        let mut workspace = Workspace::new(&mails, "weekend-1");
+        assert_eq!(workspace.selected_mail_id().as_deref(), Some("weekend-2"));
+
+        workspace.show_conversation(&mails, "project-2");
+        assert_eq!(workspace.selected_mail_id().as_deref(), Some("project-3"));
+    }
+
+    #[test]
+    fn newest_mail_is_selected_in_both_arrangements() {
+        let mails = demo_mails();
+        for arrangement in [
+            Arrangement::Adaptive(FlowOrientation::Horizontal),
+            Arrangement::Adaptive(FlowOrientation::Vertical),
+            Arrangement::Snake(2),
+        ] {
+            let flow = conversation_flow(&mails, "project-3", layout(arrangement));
+            assert!(flow.node("project-3").unwrap().selected);
+            assert!(!flow.node("project-1").unwrap().selected);
+        }
     }
 
     #[test]
