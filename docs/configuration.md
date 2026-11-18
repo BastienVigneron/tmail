@@ -286,7 +286,7 @@ A German setup might use `reply_prefix = "AW: "` and `attribution = "{from} schr
 
 ### Writing in Markdown
 
-With the Markdown format you write the body in Markdown and tmail sends two versions: an HTML one with headings, lists, tables, task lists, links and quotes laid out properly, and your Markdown text for people who read plain text. Code in a fenced block that names its language, such as `` ```rust ``, is coloured. A line break you type stays a line break, as in chat apps, and the signature after `--` is left as you wrote it. Drafts keep the Markdown, so they open the same way again.
+With the Markdown format you write the body in Markdown and tmail sends two versions: an HTML one with headings, lists, tables, task lists, links and quotes laid out properly, and your Markdown text for people who read plain text. Code in a fenced block that names its language, such as `` ```rust ``, is coloured. A line break you type stays a line break, as in chat apps, and the signature after `-- ` is left as you wrote it. Drafts keep the Markdown, so they open the same way again.
 
 ## Reading mail: `[reader]`
 
